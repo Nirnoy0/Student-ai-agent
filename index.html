@@ -1,0 +1,66 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Student AI Agent</title>
+  <style>
+    body { font-family: system-ui, Arial; max-width: 760px; margin: 24px auto; padding: 0 12px; }
+    #chat { border: 1px solid #ddd; padding: 12px; height: 420px; overflow: auto; border-radius: 8px; }
+    .msg { margin: 10px 0; }
+    .role { font-weight: 700; }
+    form { display: flex; gap: 8px; margin-top: 12px; }
+    input { flex: 1; padding: 10px; border-radius: 8px; border: 1px solid #ccc; }
+    button { padding: 10px 14px; border-radius: 8px; border: 1px solid #ccc; cursor: pointer; }
+  </style>
+</head>
+<body>
+  <h1>Student AI Agent</h1>
+  <div id="chat"></div>
+
+  <form id="f">
+    <input id="q" placeholder="Ask something (e.g., teach me Python loops)..." />
+    <button>Send</button>
+  </form>
+
+  <script>
+    const chat = document.getElementById("chat");
+    const f = document.getElementById("f");
+    const q = document.getElementById("q");
+
+    function add(role, text) {
+      const div = document.createElement("div");
+      div.className = "msg";
+      div.innerHTML = `<span class="role">${role}:</span> ${text.replaceAll("\n","<br>")}`;
+      chat.appendChild(div);
+      chat.scrollTop = chat.scrollHeight;
+    }
+
+    f.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const msg = q.value.trim();
+      if (!msg) return;
+      q.value = "";
+      add("You", msg);
+      add("Agent", "…thinking");
+
+      const res = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: msg })
+      });
+
+      // remove “thinking”
+      chat.lastChild.remove();
+
+      if (!res.ok) {
+        add("Agent", "Error: " + (await res.text()));
+        return;
+      }
+
+      const data = await res.json();
+      add("Agent", data.reply || "(no reply)");
+    });
+  </script>
+</body>
+</html>
